@@ -44,7 +44,22 @@
     </table>
   </div>
 
-  <!-- Bootstrap JS -->
+  <!-- Modal para ver el PTH -->
+  <div class="modal fade" id="pthModal" tabindex="-1" aria-labelledby="pthModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pthModalLabel">Detalles del Protocolo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="pthDetails">
+          Cargando...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.getElementById("consultaForm").addEventListener("submit", async (event) => {
@@ -84,7 +99,7 @@
             <td>${item.tipo || "N/A"}</td>
             <td>${item.actividad || "N/A"}</td>
             <td>${item.codigoHabilitacion || "N/A"}</td>
-            <td><a href="${item.protocoloLink || "#"}" target="_blank">Ver</a></td>
+            <td><button class="btn btn-info btn-sm" onclick="verPTH('${item.matricula}')">Ver PTH</button></td>
           `;
           tbody.appendChild(row);
         });
@@ -95,6 +110,31 @@
         alert("Error al realizar la consulta. Intenta nuevamente.");
       }
     });
+
+    async function verPTH(matricula) {
+      const url = `http://localhost:3000/obtener-pth/${matricula}`;
+      const modalBody = document.getElementById("pthDetails");
+      modalBody.textContent = "Cargando...";
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        const data = await response.json();
+
+        // Construye el contenido del modal
+        modalBody.innerHTML = `
+          <p><strong>Protocolo:</strong> ${data[0]?.protocolo || "N/A"}</p>
+          <p><strong>Fecha Inicio:</strong> ${data[0]?.fecha_inicio_text || "N/A"}</p>
+          <p><a href="${data[0]?.ruta_pdf || "#"}" target="_blank" class="btn btn-primary">Ver PDF</a></p>
+        `;
+      } catch (error) {
+        console.error("Error:", error.message);
+        modalBody.textContent = "No se pudo obtener el protocolo.";
+      }
+
+      const modal = new bootstrap.Modal(document.getElementById("pthModal"));
+      modal.show();
+    }
   </script>
 </body>
 </html>

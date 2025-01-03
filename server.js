@@ -9,6 +9,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Endpoint principal para obtener los datos generales
 app.post("/consulta-sanipes", async (req, res) => {
   try {
     const response = await axios.post(
@@ -43,6 +44,23 @@ app.post("/consulta-sanipes", async (req, res) => {
   } catch (error) {
     console.error("Error en la consulta:", error.message);
     res.status(500).json({ error: "No se pudo procesar la solicitud. Intenta más tarde." });
+  }
+});
+
+// Nuevo endpoint para obtener el PTH de una matrícula
+app.get("/obtener-pth/:matricula", async (req, res) => {
+  const { matricula } = req.params;
+  const url = `http://app02.sanipes.gob.pe:8089/Publico/llenar_protocolo_embarcacion_pesca?matricula=${matricula}`;
+
+  console.log(`Consultando PTH para matrícula: ${matricula}`);
+
+  try {
+    const response = await axios.get(url);
+    console.log("Respuesta de la API:", response.data);
+    res.json(response.data); // Devuelve el JSON con los detalles del PTH
+  } catch (error) {
+    console.error("Error al obtener el protocolo:", error.message);
+    res.status(500).json({ error: "No se pudo obtener el protocolo. Intenta más tarde." });
   }
 });
 

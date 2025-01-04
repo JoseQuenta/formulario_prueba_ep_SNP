@@ -52,17 +52,21 @@ app.get("/obtener-pth/:matricula", async (req, res) => {
   const { matricula } = req.params;
   const url = `http://app02.sanipes.gob.pe:8089/Publico/llenar_protocolo_embarcacion_pesca?matricula=${matricula}`;
 
-  console.log(`Consultando PTH para matrícula: ${matricula}`);
-
   try {
-    const response = await axios.get(url);
-    console.log("Respuesta de la API:", response.data);
-    res.json(response.data); // Devuelve el JSON con los detalles del PTH
+    const response = await axios.get(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Referer": "http://app02.sanipes.gob.pe:8089/Publico/Consulta_protocolos_embarcacion_pesca",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      },
+    });
+    res.json(response.data); // Envía la respuesta al cliente
   } catch (error) {
     console.error("Error al obtener el protocolo:", error.message);
     res.status(500).json({ error: "No se pudo obtener el protocolo. Intenta más tarde." });
   }
 });
+
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor escuchando en http://localhost:${PORT}`));

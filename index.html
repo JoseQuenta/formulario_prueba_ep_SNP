@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
+
 <body>
   <div class="container mt-5">
     <h1 class="text-center">Consulta SANIPES</h1>
@@ -74,7 +76,7 @@
     </thead>
     <tbody></tbody>
   </table>
-  
+
   <h2 class="mt-5">Propietarios:</h2>
   <table class="table table-bordered mt-3" id="propietariosTable" style="display: none;">
     <thead>
@@ -85,7 +87,7 @@
     </thead>
     <tbody></tbody>
   </table>
-  
+
   <h2 class="mt-5">Certificados:</h2>
   <table class="table table-bordered mt-3" id="certificadosTable" style="display: none;">
     <thead>
@@ -100,30 +102,31 @@
     </thead>
     <tbody></tbody>
   </table>
-  
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
     document.getElementById("consultaForm").addEventListener("submit", async (event) => {
       event.preventDefault();
-  
+
       const urlSanipes = "http://localhost:3000/consulta-sanipes";
       const urlDicapi = "http://localhost:3000/consulta-dicapi";
-  
+
       const matricula = document.getElementById("matricula").value;
       const codHabilitacion = document.getElementById("cod_habilitacion").value;
       const nombre = document.getElementById("nombre").value;
-  
+
       const payloadSanipes = new URLSearchParams({
         Matricula: matricula || "",
         cod_habilitacion: codHabilitacion || "",
         Nombre: nombre || "",
       });
-  
+
       const payloadDicapi = new URLSearchParams({
         matricula: matricula || "",
         nombre: nombre || "",
       });
-  
+
       try {
         // Consulta a SANIPES
         const responseSanipes = await fetch(urlSanipes, {
@@ -131,97 +134,129 @@
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: payloadSanipes,
         });
-  
+
         if (!responseSanipes.ok) throw new Error(`Error SANIPES: ${responseSanipes.status}`);
         const dataSanipes = await responseSanipes.json();
-  
+
         const sanipesTable = document.getElementById("resultadosTable");
         const sanipesTbody = sanipesTable.querySelector("tbody");
         sanipesTbody.innerHTML = ""; // Limpia los resultados previos
-  
+
         dataSanipes.forEach((item) => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${item.matricula}</td>
-            <td>${item.nombre}</td>
-            <td>${item.tipo || "N/A"}</td>
-            <td>${item.actividad || "N/A"}</td>
-            <td>${item.codigoHabilitacion || "N/A"}</td>
-            <td><button class="btn btn-info btn-sm" onclick="verPTH('${item.matricula}')">Ver PTH</button></td>
-          `;
+          <td>${item.matricula}</td>
+          <td>${item.nombre}</td>
+          <td>${item.tipo || "N/A"}</td>
+          <td>${item.actividad || "N/A"}</td>
+          <td>${item.codigoHabilitacion || "N/A"}</td>
+          <td><button class="btn btn-info btn-sm" onclick="mostrarPTH('${item.matricula}')">Ver PTH</button></td>
+        `;
           sanipesTbody.appendChild(row);
         });
+
         sanipesTable.style.display = "table";
-  
+
         // Consulta a DICAPI
         const responseDicapi = await fetch(urlDicapi, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: payloadDicapi,
         });
-  
+
         if (!responseDicapi.ok) throw new Error(`Error DICAPI: ${responseDicapi.status}`);
         const dataDicapi = await responseDicapi.json();
-  
+
         const dicapiTable = document.getElementById("resultadosDicapiTable");
         const dicapiTbody = dicapiTable.querySelector("tbody");
         dicapiTbody.innerHTML = ""; // Limpia los resultados previos
-  
+
         dataDicapi.forEach((item) => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${item.matricula || "N/A"}</td>
-            <td>${item.nombre || "N/A"}</td>
-            <td>${item.ab || "N/A"}</td>
-            <td>${item.eslora || "N/A"}</td>
-            <td>${item.manga || "N/A"}</td>
-            <td>${item.puntal || "N/A"}</td>
-            <td>
-              <button class="btn btn-info btn-sm" onclick="verDetalleNave('${item.codigoNave}')">Ver Detalle</button>
-            </td>
-          `;
+          <td>${item.matricula || "N/A"}</td>
+          <td>${item.nombre || "N/A"}</td>
+          <td>${item.ab || "N/A"}</td>
+          <td>${item.eslora || "N/A"}</td>
+          <td>${item.manga || "N/A"}</td>
+          <td>${item.puntal || "N/A"}</td>
+          <td><button class="btn btn-info btn-sm" onclick="verDetalleNave('${item.codigoNave}')">Ver Detalle</button></td>
+        `;
           dicapiTbody.appendChild(row);
         });
+
         dicapiTable.style.display = "table";
+
       } catch (error) {
         console.error("Error:", error.message);
         alert("Error al realizar las consultas. Intenta nuevamente.");
       }
     });
-  
+
+    async function mostrarPTH(matricula) {
+      const url = `http://localhost:3000/obtener-pth/${matricula}`;
+      const modalBody = document.getElementById("pthDetails");
+
+      try {
+        modalBody.textContent = "Cargando...";
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+        const data = await response.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          const { protocolo, fecha_inicio_text, ruta_pdf } = data[0];
+          modalBody.innerHTML = `
+          <p><strong>Protocolo:</strong> ${protocolo || "No disponible"}</p>
+          <p><strong>Fecha de Inicio:</strong> ${fecha_inicio_text || "No disponible"}</p>
+          ${ruta_pdf
+              ? `<p><a href="${ruta_pdf}" target="_blank" class="btn btn-primary">Ver PDF</a></p>`
+              : "<p>PDF no disponible</p>"
+            }
+        `;
+        } else {
+          modalBody.innerHTML = "<p>No se encontraron datos del protocolo.</p>";
+        }
+      } catch (error) {
+        console.error("Error al obtener el PTH:", error.message);
+        modalBody.innerHTML = `<p class="text-danger">No se pudo obtener el protocolo. Intenta nuevamente más tarde.</p>`;
+      }
+
+      const modal = new bootstrap.Modal(document.getElementById("pthModal"));
+      modal.show();
+    }
+
     async function verDetalleNave(codigoNave) {
       if (!codigoNave) {
         alert("Código de nave no disponible.");
         return;
       }
-    
+
       console.log("Iniciando consulta de detalles para el código de nave:", codigoNave);
-    
+
       try {
         const response = await fetch("http://localhost:3000/detalle-dicapi", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({ codigoNave }),
         });
-    
+
         if (!response.ok) throw new Error(`Error: ${response.status}`);
         const { detalle, certificados, propietarios } = await response.json();
-    
+
         console.log("Detalles obtenidos de DICAPI:", detalle);
         console.log("Certificados obtenidos:", certificados);
         console.log("Propietarios obtenidos:", propietarios);
-    
+
         // Actualizar la tabla de propietarios
         const propietariosTable = document.getElementById("propietariosTable");
         const propietariosTbody = propietariosTable.querySelector("tbody");
         propietariosTbody.innerHTML = ""; // Limpiar contenido previo
+
         if (propietarios.length > 0) {
           propietarios.forEach((prop) => {
             const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${prop.nombre}</td>
-              <td>${prop.dni}</td>
-            `;
+            row.innerHTML = `<td>${prop.nombre}</td><td>${prop.dni}</td>`;
             propietariosTbody.appendChild(row);
           });
           propietariosTable.style.display = "table";
@@ -229,34 +264,34 @@
           propietariosTbody.innerHTML = "<tr><td colspan='2'>No se encontraron propietarios.</td></tr>";
           propietariosTable.style.display = "table";
         }
-    
+
         // Actualizar la tabla de certificados
         const certificadosTable = document.getElementById("certificadosTable");
         const certificadosTbody = certificadosTable.querySelector("tbody");
         certificadosTbody.innerHTML = ""; // Limpiar contenido previo
+
         if (certificados.length > 0) {
           certificados.forEach((cert) => {
             const enlaceCompleto = cert.enlaceCertificadoDigital
               ? `https://consultas.dicapi.mil.pe${cert.enlaceCertificadoDigital}`
               : null;
+
             const row = document.createElement("tr");
             row.innerHTML = `
-              <td>${cert.numeroCertificado}</td>
-              <td>${cert.nombreNave}</td>
-              <td>${cert.tipoCertificado}</td>
-              <td>${cert.fechaExpedicion}</td>
-              <td>${cert.vencimientoRefrenda}</td>
-              <td>
-                ${
-                  enlaceCompleto
-                    ? `<a href="${enlaceCompleto}" target="_blank">Ver Certificado</a>`
-                    : "No disponible"
-                }
-              </td>
-            `;
+            <td>${cert.numeroCertificado}</td>
+            <td>${cert.nombreNave}</td>
+            <td>${cert.tipoCertificado}</td>
+            <td>${cert.fechaExpedicion}</td>
+            <td>${cert.vencimientoRefrenda}</td>
+            <td>
+              ${enlaceCompleto
+                ? `<a href="${enlaceCompleto}" target="_blank">Ver Certificado</a>`
+                : "No disponible"
+              }
+            </td>
+          `;
             certificadosTbody.appendChild(row);
           });
-          
           certificadosTable.style.display = "table";
         } else {
           certificadosTbody.innerHTML = "<tr><td colspan='6'>No se encontraron certificados.</td></tr>";
@@ -267,14 +302,11 @@
         alert("Error al obtener detalles de la nave. Por favor, inténtalo nuevamente.");
       }
     }
-    
-    
-    
-    
   </script>
-  
+
+
 
 
 </body>
-</html>
 
+</html>

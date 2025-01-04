@@ -53,19 +53,50 @@ app.get("/obtener-pth/:matricula", async (req, res) => {
   const url = `http://app02.sanipes.gob.pe:8089/Publico/llenar_protocolo_embarcacion_pesca?matricula=${matricula}`;
 
   try {
+    console.log(`Iniciando solicitud para la matrícula: ${matricula}`);
+    console.log(`URL generada: ${url}`);
+
     const response = await axios.get(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Referer": "http://app02.sanipes.gob.pe:8089/Publico/Consulta_protocolos_embarcacion_pesca",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept": "application/json", // Especifica que esperas un JSON
       },
     });
-    res.json(response.data); // Envía la respuesta al cliente
+
+    console.log("Respuesta recibida del servidor SANIPES.");
+
+    if (typeof response.data === "object") {
+      // Verifica si la respuesta ya es un JSON
+      console.log("Respuesta JSON procesada:");
+      console.log(JSON.stringify(response.data, null, 2));
+      res.json(response.data);
+    } else {
+      // Si no es un JSON, intenta procesarlo con cheerio como HTML
+      const $ = cheerio.load(response.data);
+      const protocolo = $("tr:contains('Protocolo:') td").text().trim();
+      const fecha_inicio_text = $("tr:contains('Fecha de Inicio:') td").text().trim();
+      const ruta_pdf = $("a:contains('Descargar PDF')").attr("href");
+
+      console.log("Datos procesados desde HTML:");
+      console.log(`Protocolo: ${protocolo}`);
+      console.log(`Fecha de Inicio: ${fecha_inicio_text}`);
+      console.log(`Ruta PDF: ${ruta_pdf ? `http://app02.sanipes.gob.pe:8089${ruta_pdf}` : "No disponible"}`);
+
+      res.json({
+        protocolo: protocolo || "No especificado",
+        fecha_inicio_text: fecha_inicio_text || "No especificado",
+        ruta_pdf: ruta_pdf ? `http://app02.sanipes.gob.pe:8089${ruta_pdf}` : null,
+      });
+    }
   } catch (error) {
-    console.error("Error al obtener el protocolo:", error.message);
-    res.status(500).json({ error: "No se pudo obtener el protocolo. Intenta más tarde." });
+    console.error("Error al obtener el PTH:", error.message);
+    res.status(500).json({ error: "No se pudo obtener el protocolo." });
   }
 });
+
+
+
+
 
 // Endpoint para consultar datos de DICAPI
 app.post("/consulta-dicapi", async (req, res) => {

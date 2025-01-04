@@ -59,39 +59,59 @@
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    document.getElementById("consultaForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
+  <h2 class="mt-5">Resultados de DICAPI:</h2>
+<table class="table table-bordered mt-3" id="resultadosDicapiTable" style="display: none;">
+  <thead>
+    <tr>
+      <th>Nombre de la Nave</th>
+      <th>Matrícula</th>
+      <th>Tipo de Nave</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-      const url = "http://localhost:3000/consulta-sanipes";
-      const matricula = document.getElementById("matricula").value;
-      const codHabilitacion = document.getElementById("cod_habilitacion").value;
-      const nombre = document.getElementById("nombre").value;
+<script>
+  document.getElementById("consultaForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-      const payload = new URLSearchParams();
-      payload.append("Matricula", matricula || "");
-      payload.append("cod_habilitacion", codHabilitacion || "");
-      payload.append("Nombre", nombre || "");
+    const urlSanipes = "http://localhost:3000/consulta-sanipes";
+    const urlDicapi = "http://localhost:3000/consulta-dicapi";
 
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: payload,
-        });
+    const matricula = document.getElementById("matricula").value;
+    const codHabilitacion = document.getElementById("cod_habilitacion").value;
+    const nombre = document.getElementById("nombre").value;
 
-        if (!response.ok) throw new Error(`Error: ${response.status}`);
-        const data = await response.json();
+    const payloadSanipes = new URLSearchParams();
+    payloadSanipes.append("Matricula", matricula || "");
+    payloadSanipes.append("cod_habilitacion", codHabilitacion || "");
+    payloadSanipes.append("Nombre", nombre || "");
 
-        const table = document.getElementById("resultadosTable");
-        const tbody = table.querySelector("tbody");
-        tbody.innerHTML = ""; // Limpia los resultados previos
+    const payloadDicapi = new URLSearchParams();
+    if (matricula) {
+      payloadDicapi.append("matricula", matricula);
+    } else if (nombre) {
+      payloadDicapi.append("nombre", nombre);
+    }
 
-        data.forEach((item) => {
+    try {
+      // Consulta a SANIPES
+      const responseSanipes = await fetch(urlSanipes, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: payloadSanipes,
+      });
+
+      if (!responseSanipes.ok) throw new Error(`Error SANIPES: ${responseSanipes.status}`);
+      const dataSanipes = await responseSanipes.json();
+
+      const sanipesTable = document.getElementById("resultadosTable");
+      const sanipesTbody = sanipesTable.querySelector("tbody");
+      sanipesTbody.innerHTML = ""; // Limpia los resultados previos
+
+      if (dataSanipes.length > 0) {
+        dataSanipes.forEach((item) => {
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${item.matricula}</td>
@@ -101,40 +121,48 @@
             <td>${item.codigoHabilitacion || "N/A"}</td>
             <td><button class="btn btn-info btn-sm" onclick="verPTH('${item.matricula}')">Ver PTH</button></td>
           `;
-          tbody.appendChild(row);
+          sanipesTbody.appendChild(row);
         });
-
-        table.style.display = "table"; // Muestra la tabla si hay datos
-      } catch (error) {
-        console.error("Error:", error.message);
-        alert("Error al realizar la consulta. Intenta nuevamente.");
+      } else {
+        sanipesTbody.innerHTML = "<tr><td colspan='6'>No se encontraron resultados en SANIPES.</td></tr>";
       }
-    });
+      sanipesTable.style.display = "table";
 
-    async function verPTH(matricula) {
-      const url = `http://localhost:3000/obtener-pth/${matricula}`;
-      const modalBody = document.getElementById("pthDetails");
-      modalBody.textContent = "Cargando...";
+      // Consulta a DICAPI
+      const responseDicapi = await fetch(urlDicapi, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: payloadDicapi,
+      });
 
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Error: ${response.status}`);
-        const data = await response.json();
+      if (!responseDicapi.ok) throw new Error(`Error DICAPI: ${responseDicapi.status}`);
+      const dataDicapi = await responseDicapi.json();
 
-        // Construye el contenido del modal
-        modalBody.innerHTML = `
-          <p><strong>Protocolo:</strong> ${data[0]?.protocolo || "N/A"}</p>
-          <p><strong>Fecha Inicio:</strong> ${data[0]?.fecha_inicio_text || "N/A"}</p>
-          <p><a href="${data[0]?.ruta_pdf || "#"}" target="_blank" class="btn btn-primary">Ver PDF</a></p>
-        `;
-      } catch (error) {
-        console.error("Error:", error.message);
-        modalBody.textContent = "No se pudo obtener el protocolo.";
+      const dicapiTable = document.getElementById("resultadosDicapiTable");
+      const dicapiTbody = dicapiTable.querySelector("tbody");
+      dicapiTbody.innerHTML = ""; // Limpia los resultados previos
+
+      if (Array.isArray(dataDicapi) && dataDicapi.length > 0) {
+        dataDicapi.forEach((item) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${item.nombre || "N/A"}</td>
+            <td>${item.matricula || "N/A"}</td>
+            <td>${item.tipo || "N/A"}</td>
+            <td>${item.estado || "N/A"}</td>
+          `;
+          dicapiTbody.appendChild(row);
+        });
+      } else {
+        dicapiTbody.innerHTML = "<tr><td colspan='4'>No se encontraron resultados en DICAPI.</td></tr>";
       }
-
-      const modal = new bootstrap.Modal(document.getElementById("pthModal"));
-      modal.show();
+      dicapiTable.style.display = "table";
+    } catch (error) {
+      console.error("Error:", error.message);
+      alert("Error al realizar las consultas. Intenta nuevamente.");
     }
-  </script>
+  });
+</script>
+
 </body>
 </html>

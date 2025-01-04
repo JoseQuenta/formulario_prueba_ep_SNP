@@ -67,6 +67,83 @@ app.get("/obtener-pth/:matricula", async (req, res) => {
   }
 });
 
+// Endpoint para consultar datos de DICAPI
+app.post("/consulta-dicapi", async (req, res) => {
+  console.log("Iniciando consulta a DICAPI...");
+  console.log("Cuerpo recibido:", req.body);
+
+  try {
+    // Construir los parámetros exactamente como se configuran en Postman
+    const params = new URLSearchParams();
+    params.append("class", "form-horizontal contForm");
+    params.append("ddlTipoConsultaID", "1"); // Consulta por matrículas
+    params.append("txtNave", req.body.matricula || "");
+
+    console.log("Parámetros enviados a DICAPI:", params.toString());
+
+    const response = await axios.post(
+      "https://consultas.dicapi.mil.pe/ConsultarNaves/Naves/ConsultarNave",
+      params,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+      }
+    );
+
+    // Imprimir la respuesta completa de DICAPI
+    console.log("Respuesta completa de DICAPI:");
+    console.log(response.data);
+
+    const $ = cheerio.load(response.data);
+    const results = [];
+
+    // Procesar la tabla de resultados
+    $("table tr").each((index, element) => {
+      const row = $(element).find("td");
+      if (row.length > 0) {
+        const matricula = $(row[0]).text().trim();
+        const nombre = $(row[1]).text().trim();
+        const ab = $(row[2]).text().trim();
+        const eslora = $(row[3]).text().trim();
+        const manga = $(row[4]).text().trim();
+        const puntal = $(row[5]).text().trim();
+        const detalleLink = $(row[6]).find("a").attr("href");
+
+        results.push({
+          matricula,
+          nombre,
+          ab,
+          eslora,
+          manga,
+          puntal,
+          detalleLink: detalleLink || "#",
+        });
+      }
+    });
+
+    if (results.length > 0) {
+      console.log("Resultados procesados:", results);
+    } else {
+      console.log("No se encontraron resultados en DICAPI.");
+    }
+
+    res.json(results);
+  } catch (error) {
+    console.error("Error en la consulta DICAPI:", error.message);
+
+    // Imprimir detalles de error
+    if (error.response) {
+      console.error("Estado del error:", error.response.status);
+      console.error("Encabezados del error:", error.response.headers);
+      console.error("Contenido devuelto por DICAPI:");
+      console.error(error.response.data);
+    }
+
+    res.status(500).json({ error: "No se pudo procesar la solicitud. Intenta más tarde." });
+  }
+});
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor escuchando en http://localhost:${PORT}`));

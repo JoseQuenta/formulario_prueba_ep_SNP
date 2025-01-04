@@ -75,6 +75,33 @@
     <tbody></tbody>
   </table>
   
+  <h2 class="mt-5">Propietarios:</h2>
+  <table class="table table-bordered mt-3" id="propietariosTable" style="display: none;">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>DNI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  
+  <h2 class="mt-5">Certificados:</h2>
+  <table class="table table-bordered mt-3" id="certificadosTable" style="display: none;">
+    <thead>
+      <tr>
+        <th>N° Certificado</th>
+        <th>Nombre de la Nave</th>
+        <th>Tipo de Certificado</th>
+        <th>Fecha de Expedición</th>
+        <th>Vencimiento</th>
+        <th>Certificado Digital</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  
+
   <script>
     document.getElementById("consultaForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -178,33 +205,70 @@
         });
     
         if (!response.ok) throw new Error(`Error: ${response.status}`);
-        const data = await response.json();
+        const { detalle, certificados, propietarios } = await response.json();
     
-        console.log("Detalles obtenidos de DICAPI:", data);
+        console.log("Detalles obtenidos de DICAPI:", detalle);
+        console.log("Certificados obtenidos:", certificados);
+        console.log("Propietarios obtenidos:", propietarios);
     
-        // Mostrar los detalles en el modal
-        const modalBody = document.getElementById("pthDetails");
-        modalBody.innerHTML = `
-          <h5>Información de la Nave</h5>
-          <ul>
-            <li><strong>Nombre:</strong> ${data.nombre || "N/A"}</li>
-            <li><strong>Matrícula:</strong> ${data.matricula || "N/A"}</li>
-            <li><strong>Estado de Matrícula:</strong> ${data.estadoMatricula || "N/A"}</li>
-            <li><strong>Folio:</strong> ${data.folio || "N/A"}</li>
-            <li><strong>Libro:</strong> ${data.libro || "N/A"}</li>
-            <li><strong>Arqueo Bruto:</strong> ${data.arqueoBruto || "N/A"}</li>
-            <li><strong>Eslora:</strong> ${data.eslora || "N/A"}</li>
-            <li><strong>Manga:</strong> ${data.manga || "N/A"}</li>
-            <li><strong>Puntal:</strong> ${data.puntal || "N/A"}</li>
-          </ul>
-        `;
-        const modal = new bootstrap.Modal(document.getElementById("pthModal"));
-        modal.show();
+        // Actualizar la tabla de propietarios
+        const propietariosTable = document.getElementById("propietariosTable");
+        const propietariosTbody = propietariosTable.querySelector("tbody");
+        propietariosTbody.innerHTML = ""; // Limpiar contenido previo
+        if (propietarios.length > 0) {
+          propietarios.forEach((prop) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${prop.nombre}</td>
+              <td>${prop.dni}</td>
+            `;
+            propietariosTbody.appendChild(row);
+          });
+          propietariosTable.style.display = "table";
+        } else {
+          propietariosTbody.innerHTML = "<tr><td colspan='2'>No se encontraron propietarios.</td></tr>";
+          propietariosTable.style.display = "table";
+        }
+    
+        // Actualizar la tabla de certificados
+        const certificadosTable = document.getElementById("certificadosTable");
+        const certificadosTbody = certificadosTable.querySelector("tbody");
+        certificadosTbody.innerHTML = ""; // Limpiar contenido previo
+        if (certificados.length > 0) {
+          certificados.forEach((cert) => {
+            const enlaceCompleto = cert.enlaceCertificadoDigital
+              ? `https://consultas.dicapi.mil.pe${cert.enlaceCertificadoDigital}`
+              : null;
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${cert.numeroCertificado}</td>
+              <td>${cert.nombreNave}</td>
+              <td>${cert.tipoCertificado}</td>
+              <td>${cert.fechaExpedicion}</td>
+              <td>${cert.vencimientoRefrenda}</td>
+              <td>
+                ${
+                  enlaceCompleto
+                    ? `<a href="${enlaceCompleto}" target="_blank">Ver Certificado</a>`
+                    : "No disponible"
+                }
+              </td>
+            `;
+            certificadosTbody.appendChild(row);
+          });
+          
+          certificadosTable.style.display = "table";
+        } else {
+          certificadosTbody.innerHTML = "<tr><td colspan='6'>No se encontraron certificados.</td></tr>";
+          certificadosTable.style.display = "table";
+        }
       } catch (error) {
         console.error("Error al obtener detalles de la nave:", error.message);
         alert("Error al obtener detalles de la nave. Por favor, inténtalo nuevamente.");
       }
     }
+    
+    
     
     
   </script>

@@ -180,11 +180,9 @@ app.post("/detalle-dicapi", async (req, res) => {
       }
     );
 
-    console.log("Respuesta completa de DICAPI:");
-    console.log(response.data);
-
     const $ = cheerio.load(response.data);
 
+    // Extraer los datos principales
     const detalle = {
       nombre: $("ul.list-inline li:contains('Nave:')").next().text().trim(),
       matricula: $("ul.list-inline li:contains('Matricula:')").next().text().trim(),
@@ -197,9 +195,41 @@ app.post("/detalle-dicapi", async (req, res) => {
       manga: $("ul.list-inline li:contains('Manga:')").next().text().trim(),
     };
 
-    console.log("Detalle procesado:", detalle);
+    // Extraer los certificados digitales
+    const certificados = [];
+    $("table tbody tr").each((_, row) => {
+      const columns = $(row).find("td");
+      if (columns.length > 0) {
+        const certificado = {
+          numeroCertificado: $(columns[0]).text().trim(),
+          nombreNave: $(columns[1]).text().trim(),
+          tipoCertificado: $(columns[2]).text().trim(),
+          fechaExpedicion: $(columns[3]).text().trim(),
+          vencimientoRefrenda: $(columns[4]).text().trim(),
+          enlaceCertificadoDigital: $(columns[5]).find("a").attr("href") || null,
+        };
+        certificados.push(certificado);
+      }
+    });
 
-    res.json(detalle);
+    // Extraer los propietarios
+    const propietarios = [];
+    $("#prop table tr").each((_, row) => {
+      const columns = $(row).find("td");
+      if (columns.length > 0) {
+        const propietario = {
+          nombre: $(columns[0]).text().trim(),
+          dni: $(columns[1]).text().trim(),
+        };
+        propietarios.push(propietario);
+      }
+    });
+
+    console.log("Detalle procesado:", detalle);
+    console.log("Certificados procesados:", certificados);
+    console.log("Propietarios procesados:", propietarios);
+
+    res.json({ detalle, certificados, propietarios });
   } catch (error) {
     console.error("Error al obtener detalles de DICAPI:", error.message);
 
@@ -212,6 +242,7 @@ app.post("/detalle-dicapi", async (req, res) => {
     res.status(500).json({ error: "No se pudo obtener los detalles. Intenta más tarde." });
   }
 });
+
 
 
 const PORT = 3000;

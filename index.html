@@ -10,13 +10,14 @@
 </head>
 
 <body>
+  <div id="notification-container" style="position: fixed; top: 10px; right: 10px; z-index: 9999;"></div>
   <div class="container mt-5">
     <h1 class="text-center">Consulta SANIPES</h1>
     <form id="consultaForm" class="mt-4">
       <div class="row mb-3">
         <div class="col-md-4">
           <label for="matricula" class="form-label">Matrícula:</label>
-          <input type="text" id="matricula" name="Matricula" class="form-control">
+          <input type="text" id="matricula" name="Matricula" class="form-control" autofocus>
         </div>
         <div class="col-md-4">
           <label for="cod_habilitacion" class="form-label">Código de Habilitación:</label>
@@ -28,6 +29,8 @@
         </div>
       </div>
       <button type="submit" class="btn btn-primary">Consultar</button>
+      <button type="button" id="clearButton" class="btn btn-secondary">Limpiar</button>
+
     </form>
 
     <h2 class="mt-5">Resultados:</h2>
@@ -302,6 +305,81 @@
         alert("Error al obtener detalles de la nave. Por favor, inténtalo nuevamente.");
       }
     }
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const tables = document.querySelectorAll("table");
+
+      function showNotification(message, duration = 3000) {
+        const container = document.getElementById("notification-container");
+
+        // Crear la notificación
+        const notification = document.createElement("div");
+        notification.textContent = message;
+        notification.style.background = "#007bff";
+        notification.style.color = "#fff";
+        notification.style.padding = "10px 20px";
+        notification.style.marginBottom = "10px";
+        notification.style.borderRadius = "5px";
+        notification.style.boxShadow = "0 2px 5px rgba(0, 0, 0, 0.2)";
+        notification.style.fontSize = "14px";
+
+        // Añadir la notificación al contenedor
+        container.appendChild(notification);
+
+        // Eliminar la notificación después de la duración especificada
+        setTimeout(() => {
+          notification.remove();
+        }, duration);
+      }
+
+      tables.forEach((table) => {
+        table.addEventListener("click", function (event) {
+          const target = event.target;
+          if (target.tagName === "TD") {
+            const textToCopy = target.textContent.trim();
+            navigator.clipboard.writeText(textToCopy)
+              .then(() => {
+                showNotification(`Copiado: "${textToCopy}"`);
+              })
+              .catch((error) => {
+                console.error("Error al copiar al portapapeles:", error);
+                showNotification("No se pudo copiar al portapapeles.", 5000);
+              });
+          }
+        });
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const clearButton = document.getElementById("clearButton");
+      const inputs = document.querySelectorAll("#consultaForm input");
+      const resultadosTable = document.getElementById("resultadosTable");
+      const resultadosDicapiTable = document.getElementById("resultadosDicapiTable");
+      const propietariosTable = document.getElementById("propietariosTable");
+      const certificadosTable = document.getElementById("certificadosTable");
+      const matriculaInput = document.getElementById("matricula");
+
+      // Enfocar en el campo "Matrícula" al cargar la página
+      matriculaInput.focus();
+
+      clearButton.addEventListener("click", function () {
+        // Limpiar los campos del formulario
+        inputs.forEach(input => input.value = "");
+
+        // Limpiar las tablas de resultados
+        [resultadosTable, resultadosDicapiTable, propietariosTable, certificadosTable].forEach(table => {
+          table.style.display = "none";
+          table.querySelector("tbody").innerHTML = ""; // Limpia el contenido de las tablas
+        });
+
+        // Enfocar nuevamente en el campo "Matrícula"
+        matriculaInput.focus();
+      });
+    });
+
+
   </script>
 
 

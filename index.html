@@ -60,17 +60,21 @@
   </div>
 
   <h2 class="mt-5">Resultados de DICAPI:</h2>
-<table class="table table-bordered mt-3" id="resultadosDicapiTable" style="display: none;">
-  <thead>
-    <tr>
-      <th>Nombre de la Nave</th>
-      <th>Matrícula</th>
-      <th>Tipo de Nave</th>
-      <th>Estado</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <table class="table table-bordered mt-3" id="resultadosDicapiTable" style="display: none;">
+    <thead>
+      <tr>
+        <th>Matrícula</th>
+        <th>Nombre</th>
+        <th>AB</th>
+        <th>Eslora</th>
+        <th>Manga</th>
+        <th>Puntal</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  
 
 <script>
   document.getElementById("consultaForm").addEventListener("submit", async (event) => {
@@ -146,17 +150,21 @@
         dataDicapi.forEach((item) => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${item.nombre || "N/A"}</td>
             <td>${item.matricula || "N/A"}</td>
-            <td>${item.tipo || "N/A"}</td>
-            <td>${item.estado || "N/A"}</td>
+            <td>${item.nombre || "N/A"}</td>
+            <td>${item.ab || "N/A"}</td>
+            <td>${item.eslora || "N/A"}</td>
+            <td>${item.manga || "N/A"}</td>
+            <td>${item.puntal || "N/A"}</td>
+            <td><a href="https://consultas.dicapi.mil.pe${item.detalleLink}" target="_blank">Ver Detalle</a></td>
           `;
           dicapiTbody.appendChild(row);
         });
+        dicapiTable.style.display = "table";
       } else {
-        dicapiTbody.innerHTML = "<tr><td colspan='4'>No se encontraron resultados en DICAPI.</td></tr>";
+        dicapiTbody.innerHTML = "<tr><td colspan='7'>No se encontraron resultados en DICAPI.</td></tr>";
+        dicapiTable.style.display = "table";
       }
-      dicapiTable.style.display = "table";
     } catch (error) {
       console.error("Error:", error.message);
       alert("Error al realizar las consultas. Intenta nuevamente.");

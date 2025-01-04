@@ -73,11 +73,17 @@ app.post("/consulta-dicapi", async (req, res) => {
   console.log("Cuerpo recibido:", req.body);
 
   try {
-    // Construir los parámetros exactamente como se configuran en Postman
+    const tipoConsulta = req.body.matricula ? "1" : req.body.nombre ? "2" : null;
+
+    if (!tipoConsulta) {
+      return res.status(400).json({ error: "Debe proporcionar una matrícula o un nombre." });
+    }
+
+    // Construir los parámetros con base en el tipo de consulta
     const params = new URLSearchParams();
     params.append("class", "form-horizontal contForm");
-    params.append("ddlTipoConsultaID", "1"); // Consulta por matrículas
-    params.append("txtNave", req.body.matricula || "");
+    params.append("ddlTipoConsultaID", tipoConsulta);
+    params.append("txtNave", req.body.matricula || req.body.nombre || "");
 
     console.log("Parámetros enviados a DICAPI:", params.toString());
 
@@ -144,6 +150,7 @@ app.post("/consulta-dicapi", async (req, res) => {
     res.status(500).json({ error: "No se pudo procesar la solicitud. Intenta más tarde." });
   }
 });
+
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Servidor escuchando en http://localhost:${PORT}`));

@@ -75,46 +75,43 @@
     <tbody></tbody>
   </table>
   
-
-<script>
-  document.getElementById("consultaForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const urlSanipes = "http://localhost:3000/consulta-sanipes";
-    const urlDicapi = "http://localhost:3000/consulta-dicapi";
-
-    const matricula = document.getElementById("matricula").value;
-    const codHabilitacion = document.getElementById("cod_habilitacion").value;
-    const nombre = document.getElementById("nombre").value;
-
-    const payloadSanipes = new URLSearchParams();
-    payloadSanipes.append("Matricula", matricula || "");
-    payloadSanipes.append("cod_habilitacion", codHabilitacion || "");
-    payloadSanipes.append("Nombre", nombre || "");
-
-    const payloadDicapi = new URLSearchParams();
-    if (matricula) {
-      payloadDicapi.append("matricula", matricula);
-    } else if (nombre) {
-      payloadDicapi.append("nombre", nombre);
-    }
-
-    try {
-      // Consulta a SANIPES
-      const responseSanipes = await fetch(urlSanipes, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: payloadSanipes,
+  <script>
+    document.getElementById("consultaForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+  
+      const urlSanipes = "http://localhost:3000/consulta-sanipes";
+      const urlDicapi = "http://localhost:3000/consulta-dicapi";
+  
+      const matricula = document.getElementById("matricula").value;
+      const codHabilitacion = document.getElementById("cod_habilitacion").value;
+      const nombre = document.getElementById("nombre").value;
+  
+      const payloadSanipes = new URLSearchParams({
+        Matricula: matricula || "",
+        cod_habilitacion: codHabilitacion || "",
+        Nombre: nombre || "",
       });
-
-      if (!responseSanipes.ok) throw new Error(`Error SANIPES: ${responseSanipes.status}`);
-      const dataSanipes = await responseSanipes.json();
-
-      const sanipesTable = document.getElementById("resultadosTable");
-      const sanipesTbody = sanipesTable.querySelector("tbody");
-      sanipesTbody.innerHTML = ""; // Limpia los resultados previos
-
-      if (dataSanipes.length > 0) {
+  
+      const payloadDicapi = new URLSearchParams({
+        matricula: matricula || "",
+        nombre: nombre || "",
+      });
+  
+      try {
+        // Consulta a SANIPES
+        const responseSanipes = await fetch(urlSanipes, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: payloadSanipes,
+        });
+  
+        if (!responseSanipes.ok) throw new Error(`Error SANIPES: ${responseSanipes.status}`);
+        const dataSanipes = await responseSanipes.json();
+  
+        const sanipesTable = document.getElementById("resultadosTable");
+        const sanipesTbody = sanipesTable.querySelector("tbody");
+        sanipesTbody.innerHTML = ""; // Limpia los resultados previos
+  
         dataSanipes.forEach((item) => {
           const row = document.createElement("tr");
           row.innerHTML = `
@@ -127,26 +124,22 @@
           `;
           sanipesTbody.appendChild(row);
         });
-      } else {
-        sanipesTbody.innerHTML = "<tr><td colspan='6'>No se encontraron resultados en SANIPES.</td></tr>";
-      }
-      sanipesTable.style.display = "table";
-
-      // Consulta a DICAPI
-      const responseDicapi = await fetch(urlDicapi, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: payloadDicapi,
-      });
-
-      if (!responseDicapi.ok) throw new Error(`Error DICAPI: ${responseDicapi.status}`);
-      const dataDicapi = await responseDicapi.json();
-
-      const dicapiTable = document.getElementById("resultadosDicapiTable");
-      const dicapiTbody = dicapiTable.querySelector("tbody");
-      dicapiTbody.innerHTML = ""; // Limpia los resultados previos
-
-      if (Array.isArray(dataDicapi) && dataDicapi.length > 0) {
+        sanipesTable.style.display = "table";
+  
+        // Consulta a DICAPI
+        const responseDicapi = await fetch(urlDicapi, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: payloadDicapi,
+        });
+  
+        if (!responseDicapi.ok) throw new Error(`Error DICAPI: ${responseDicapi.status}`);
+        const dataDicapi = await responseDicapi.json();
+  
+        const dicapiTable = document.getElementById("resultadosDicapiTable");
+        const dicapiTbody = dicapiTable.querySelector("tbody");
+        dicapiTbody.innerHTML = ""; // Limpia los resultados previos
+  
         dataDicapi.forEach((item) => {
           const row = document.createElement("tr");
           row.innerHTML = `
@@ -156,21 +149,68 @@
             <td>${item.eslora || "N/A"}</td>
             <td>${item.manga || "N/A"}</td>
             <td>${item.puntal || "N/A"}</td>
-            <td><a href="https://consultas.dicapi.mil.pe${item.detalleLink}" target="_blank">Ver Detalle</a></td>
+            <td>
+              <button class="btn btn-info btn-sm" onclick="verDetalleNave('${item.codigoNave}')">Ver Detalle</button>
+            </td>
           `;
           dicapiTbody.appendChild(row);
         });
         dicapiTable.style.display = "table";
-      } else {
-        dicapiTbody.innerHTML = "<tr><td colspan='7'>No se encontraron resultados en DICAPI.</td></tr>";
-        dicapiTable.style.display = "table";
+      } catch (error) {
+        console.error("Error:", error.message);
+        alert("Error al realizar las consultas. Intenta nuevamente.");
       }
-    } catch (error) {
-      console.error("Error:", error.message);
-      alert("Error al realizar las consultas. Intenta nuevamente.");
+    });
+  
+    async function verDetalleNave(codigoNave) {
+      if (!codigoNave) {
+        alert("Código de nave no disponible.");
+        return;
+      }
+    
+      console.log("Iniciando consulta de detalles para el código de nave:", codigoNave);
+    
+      try {
+        const response = await fetch("http://localhost:3000/detalle-dicapi", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ codigoNave }),
+        });
+    
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        const data = await response.json();
+    
+        console.log("Detalles obtenidos de DICAPI:", data);
+    
+        // Mostrar los detalles en el modal
+        const modalBody = document.getElementById("pthDetails");
+        modalBody.innerHTML = `
+          <h5>Información de la Nave</h5>
+          <ul>
+            <li><strong>Nombre:</strong> ${data.nombre || "N/A"}</li>
+            <li><strong>Matrícula:</strong> ${data.matricula || "N/A"}</li>
+            <li><strong>Estado de Matrícula:</strong> ${data.estadoMatricula || "N/A"}</li>
+            <li><strong>Folio:</strong> ${data.folio || "N/A"}</li>
+            <li><strong>Libro:</strong> ${data.libro || "N/A"}</li>
+            <li><strong>Arqueo Bruto:</strong> ${data.arqueoBruto || "N/A"}</li>
+            <li><strong>Eslora:</strong> ${data.eslora || "N/A"}</li>
+            <li><strong>Manga:</strong> ${data.manga || "N/A"}</li>
+            <li><strong>Puntal:</strong> ${data.puntal || "N/A"}</li>
+          </ul>
+        `;
+        const modal = new bootstrap.Modal(document.getElementById("pthModal"));
+        modal.show();
+      } catch (error) {
+        console.error("Error al obtener detalles de la nave:", error.message);
+        alert("Error al obtener detalles de la nave. Por favor, inténtalo nuevamente.");
+      }
     }
-  });
-</script>
+    
+    
+  </script>
+  
+
 
 </body>
 </html>
+

@@ -116,7 +116,8 @@ app.post("/consulta-dicapi", async (req, res) => {
         const manga = $(row[4]).text().trim();
         const puntal = $(row[5]).text().trim();
         const detalleLink = $(row[6]).find("a").attr("href");
-
+        const codigoNave = detalleLink ? detalleLink.match(/CodigoNave=(\d+)/)?.[1] : null;
+    
         results.push({
           matricula,
           nombre,
@@ -124,10 +125,12 @@ app.post("/consulta-dicapi", async (req, res) => {
           eslora,
           manga,
           puntal,
+          codigoNave,
           detalleLink: detalleLink || "#",
         });
       }
     });
+    
 
     if (results.length > 0) {
       console.log("Resultados procesados:", results);
@@ -148,6 +151,65 @@ app.post("/consulta-dicapi", async (req, res) => {
     }
 
     res.status(500).json({ error: "No se pudo procesar la solicitud. Intenta más tarde." });
+  }
+});
+
+app.post("/detalle-dicapi", async (req, res) => {
+  const { codigoNave } = req.body;
+
+  console.log("Iniciando consulta de detalles a DICAPI...");
+  console.log("Código de nave recibido:", codigoNave);
+
+  if (!codigoNave) {
+    console.error("No se proporcionó un código de nave.");
+    return res.status(400).json({ error: "Debe proporcionar un código de nave." });
+  }
+
+  try {
+    const params = new URLSearchParams({ CodigoNave: codigoNave });
+    console.log("Parámetros enviados a DICAPI:", params.toString());
+
+    const response = await axios.post(
+      "https://consultas.dicapi.mil.pe/ConsultarNaves/Naves/VerDetalleNave",
+      params,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+      }
+    );
+
+    console.log("Respuesta completa de DICAPI:");
+    console.log(response.data);
+
+    const $ = cheerio.load(response.data);
+
+    const detalle = {
+      nombre: $("ul.list-inline li:contains('Nave:')").next().text().trim(),
+      matricula: $("ul.list-inline li:contains('Matricula:')").next().text().trim(),
+      estadoMatricula: $("ul.list-inline li:contains('Estado de matricula:')").next().text().trim(),
+      folio: $("ul.list-inline li:contains('Folio:')").next().text().trim(),
+      libro: $("ul.list-inline li:contains('Libro:')").next().text().trim(),
+      arqueoBruto: $("ul.list-inline li:contains('Arqueo Bruto:')").next().text().trim(),
+      eslora: $("ul.list-inline li:contains('Eslora:')").next().text().trim(),
+      puntal: $("ul.list-inline li:contains('Puntal:')").next().text().trim(),
+      manga: $("ul.list-inline li:contains('Manga:')").next().text().trim(),
+    };
+
+    console.log("Detalle procesado:", detalle);
+
+    res.json(detalle);
+  } catch (error) {
+    console.error("Error al obtener detalles de DICAPI:", error.message);
+
+    if (error.response) {
+      console.error("Estado del error:", error.response.status);
+      console.error("Encabezados del error:", error.response.headers);
+      console.error("Contenido devuelto por DICAPI:", error.response.data);
+    }
+
+    res.status(500).json({ error: "No se pudo obtener los detalles. Intenta más tarde." });
   }
 });
 

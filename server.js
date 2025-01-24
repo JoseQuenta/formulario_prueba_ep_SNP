@@ -47,6 +47,13 @@ app.post("/consulta-sanipes", async (req, res) => {
   }
 });
 
+const path = require("path");
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+
 // Nuevo endpoint para obtener el PTH de una matrícula
 app.get("/obtener-pth/:matricula", async (req, res) => {
   const { matricula } = req.params;

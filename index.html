@@ -112,8 +112,8 @@
     document.getElementById("consultaForm").addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const urlSanipes = "http://localhost:3000/consulta-sanipes";
-      const urlDicapi = "http://localhost:3000/consulta-dicapi";
+      const urlSanipes = "https://consulta-ep-primer-beta.onrender.com/consulta-sanipes";
+      const urlDicapi = "https://consulta-ep-primer-beta.onrender.com/consulta-dicapi";
 
       const matricula = document.getElementById("matricula").value;
       const codHabilitacion = document.getElementById("cod_habilitacion").value;
@@ -197,7 +197,7 @@
     });
 
     async function mostrarPTH(matricula) {
-      const url = `http://localhost:3000/obtener-pth/${matricula}`;
+      const url = `https://consulta-ep-primer-beta.onrender.com/obtener-pth/${matricula}`;
       const modalBody = document.getElementById("pthDetails");
 
       try {
@@ -238,7 +238,7 @@
       console.log("Iniciando consulta de detalles para el código de nave:", codigoNave);
 
       try {
-        const response = await fetch("http://localhost:3000/detalle-dicapi", {
+        const response = await fetch("https://consulta-ep-primer-beta.onrender.com/detalle-dicapi", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({ codigoNave }),

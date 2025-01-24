@@ -14,7 +14,13 @@ app.post("/consulta-sanipes", async (req, res) => {
   try {
     const response = await axios.post(
       "http://app02.sanipes.gob.pe:8089/Publico/Consulta_protocolos_embarcacion_pesca",
-      new URLSearchParams(req.body)
+      new URLSearchParams(req.body),
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
     );
 
     const $ = cheerio.load(response.data);
